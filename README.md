@@ -87,6 +87,62 @@ RSpec.describe Post, type: :model do
   it { is_expected.to belong_to(:moderator) }
 end
 
+module ValidationScopesHelpers
+  def rewire_errors_to_warngings(object)
+    def object.valid?
+      has_warnings?
+    end
+  end
+  def object.errors
+    warngings
+  end
+end
+
+class Obj < AcitveRecord::Base
+  validates :name, presence: true
+  validation_scope :warnings do |o|
+    o.validates :address, presence: true
+  end
+end
+
+include ValidationScopesHelpers
+subject(:obj) { FactoryBot.build :obj }
+context "regular validation tests" do
+  it { is_expected.to validate_presence_of(:name) }
+end
+context "validation warning tests" do
+  before { rewire_errors_to_warning(obj) }
+  it { is_expected.to validate_presence_of(:address) }
+end
+
+group :test do
+  gem 'shoulda-matchers'
+  gem 'minitest-matchers_vaccine'
+end
+
+Shoulda::Matchers.configure do |config|
+  config.integrate do |with|
+    with.test_framework :minitest
+    with.library :rails
+  end
+end
+
+class UserTest < Minitest::Test
+  def test_validtion
+    user = User.new
+    assert_must validate_presence_of(:email), user
+  end
+end
+
+class UserTest < Minitest::Test
+  def setup
+    @subject = User.new
+  end
+  def test_validateion
+    must validate_presence_of :email
+  end
+end
+
 
 
 
